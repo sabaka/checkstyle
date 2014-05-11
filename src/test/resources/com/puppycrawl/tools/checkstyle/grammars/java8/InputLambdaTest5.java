@@ -3,6 +3,8 @@ package com.puppycrawl.tools.checkstyle.grammars.java8;
 public class InputLabdaTest5 {
 	
 	public void doSomething() {
-		object.doSmth((String s1) -> {System.out.println(s1)});
+List<Integer> numbers = Arrays.asList(1, 2, 3, 4, 5, 6);
+		
+		numbers.forEach((Integer value) -> {System.out.println(value);});
 	}
 }
