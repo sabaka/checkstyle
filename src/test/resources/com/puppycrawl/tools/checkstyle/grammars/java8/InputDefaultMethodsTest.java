@@ -5,5 +5,7 @@ public interface InputDefaultMethods {
 	default public void doSomething(){
 		System.out.println("Something done.");
 	}
+	
+	public void doOneMoreThing();
 
 }
