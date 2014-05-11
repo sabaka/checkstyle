@@ -151,4 +151,15 @@ public class LambdaTest extends BaseCheckTestSupport {
 
 	}
 
+	@Test
+	public void testWIthMultilineBody()
+			throws Exception
+	{
+		final DefaultConfiguration checkConfig =
+				createCheckConfig(MemberNameCheck.class);
+		final String[] expected = {};
+		verify(checkConfig, getPath("grammars/java8/InputLambdaTest14.java"), expected);
+
+	}
+
 }

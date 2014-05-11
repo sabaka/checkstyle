@@ -2,7 +2,19 @@ package com.puppycrawl.tools.checkstyle.grammars.java8;
 
 public class InputLabdaTest12 {
 
-	public void doSomething() {
-		object.doSmth((String s1, String s2) -> System.out.println(s1 + s2));
+	public static void testVoidLambda(TestOfVoidLambdas test) {
+		System.out.println("Method called");
+		test.doSmth("fef", 5);
+	}
+	
+	
+	public static void main(String[] args) {
+		
+		testVoidLambda((String s1, Integer i2) -> System.out.println(s1));
+	}
+
+	private interface TestOfVoidLambdas {
+
+		public void doSmth(String first, Integer second);
 	}
 }

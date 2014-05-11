@@ -1,8 +1,15 @@
 package com.puppycrawl.tools.checkstyle.grammars.java8;
 
+import java.util.Arrays;
+import java.util.List;
+
 public class InputLabdaTest7 {
 
 	public void doSomething() {
-		object.doSmth((s1) -> {System.out.println(s1)});
+		List<Integer> numbers = Arrays.asList(1, 2, 3, 4, 5, 6);
+
+		numbers.forEach((value) -> {
+			System.out.println(value);
+		});
 	}
 }
