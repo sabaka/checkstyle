@@ -95,6 +95,9 @@ tokens {
     
     //Tokens for Java 1.7 language enhancements
     RESOURCE_SPECIFICATION; RESOURCES; RESOURCE;
+
+    //TOkens for 1.8
+    LAMBDA;
 }
 
 {
@@ -783,7 +786,7 @@ implementsClause
                                         tc,
                                         s2,
                                         s5);}
-                       |	v:variableDefinitions[#mods,#t] s6:SEMI
+                       |	v:variableDefinitions[#mods,#t] (s6:SEMI)?
                            {
                                #field = #v;
                                #v.addChild(#s6);
@@ -944,7 +947,7 @@ parameterModifier
 
 // A formal parameter.
 parameterDeclaration!
-	:	pm:parameterModifier t:typeSpec[false] id:IDENT
+	:	pm:parameterModifier (t:typeSpec[false])? id:IDENT
 		pd:declaratorBrackets[#t]
 		{#parameterDeclaration = #(#[PARAMETER_DEF,"PARAMETER_DEF"],
 									pm, #([TYPE,"TYPE"],pd), id);}
@@ -999,7 +1002,7 @@ traditionalStatement
 		// An expression statement.  This could be a method call,
 		// assignment statement, or any other expression evaluated for
 		// side-effects.
-		|	expression SEMI
+		|	{LA(2) != COLON}? expression (SEMI)?
 
 		// class definition
 		|	m:modifiers! classDefinition[#m]
@@ -1221,7 +1224,8 @@ finallyHandler
 
 // the mother of all expressions
 expression
-	:	assignmentExpression
+	:	(lambdaExpression) => lambdaExpression
+    |   {LA(1)!=RPAREN}? assignmentExpression
 		{#expression = #(#[EXPR,"EXPR"],#expression);}
 	;
 
@@ -1249,7 +1253,8 @@ assignmentExpression
             |   BXOR_ASSIGN^
             |   BOR_ASSIGN^
             )
-			assignmentExpression
+			((lambdaExpression)=>lambdaExpression
+			| assignmentExpression)
 		)?
 	;
 
@@ -1257,7 +1262,11 @@ assignmentExpression
 // conditional test (level 12)
 conditionalExpression
 	:	logicalOrExpression
-		( QUESTION^ assignmentExpression COLON conditionalExpression )?
+		( QUESTION^ 
+            ((lambdaExpression)=>lambdaExpression
+                | assignmentExpression)
+         COLON ((lambdaExpression)=>lambdaExpression
+                | conditionalExpression) )?
 	;
 
 
@@ -1299,7 +1308,7 @@ equalityExpression
 
 // boolean relational expressions (level 5)
 relationalExpression
-	:	shiftExpression
+	:	shiftExpression ( "instanceof"^ typeSpec[true])?
 		(	(	(	LT^
 				|	GT^
 				|	LE^
@@ -1307,7 +1316,7 @@ relationalExpression
 				)
 				shiftExpression
 			)*
-		|	"instanceof"^ typeSpec[true]
+		
 		)
 	;
 
@@ -1359,6 +1368,10 @@ unaryExpressionNotPlusMinus
 		|	(LPAREN typeCastParameters RPAREN unaryExpressionNotPlusMinus)=>
 			lp:LPAREN^ {#lp.setType(TYPECAST);} typeCastParameters RPAREN
 			unaryExpressionNotPlusMinus
+
+        |   (LPAREN typeCastParameters RPAREN lambdaExpression) =>
+                lpl:LPAREN^ {#lpl.setType(TYPECAST);} typeCastParameters RPAREN
+                lambdaExpression
 
 		|	postfixExpression
 		)
@@ -1435,7 +1448,7 @@ primaryExpression
 	|	"this"
 	|	"null"
 	|	newExpression
-	|	LPAREN assignmentExpression RPAREN
+	|	LPAREN ((lambdaExpression)=>lambdaExpression | assignmentExpression) RPAREN
 	|	"super"
 		// look for int.class and int[].class and int[]
 	|	builtInType
@@ -1510,7 +1523,7 @@ newExpression
 	;
 
 argList
-	:	(	expressionList
+	:	(	{LA(1)!=RPAREN}? expressionList
 		|	/*nothing*/
 			{#argList = #[ELIST,"ELIST"];}
 		)
@@ -1540,6 +1553,24 @@ constant
 	|   NUM_DOUBLE
 	|	CHAR_LITERAL
 	|	STRING_LITERAL
+	;
+
+lambdaExpression
+	:	lambdaParameters LAMBDA^ lambdaBody
+	;
+
+lambdaParameters
+	:	IDENT
+	|	LPAREN (parameterDeclarationList)? RPAREN
+	|	LPAREN inferredParameterList RPAREN
+	;
+
+lambdaBody
+	:	expression 
+	|	statement
+	;
+inferredParameterList
+	:	IDENT (COMMA IDENT)*
 	;
 
 
@@ -1634,6 +1665,7 @@ SL				:	"<<"	;
 SL_ASSIGN		:	"<<="	;
 LE				:	"<="	;
 LT				:	'<'		;
+LAMBDA          :   "->"    ;
 BXOR			:	'^'		;
 BXOR_ASSIGN		:	"^="	;
 BOR				:	'|'		;
