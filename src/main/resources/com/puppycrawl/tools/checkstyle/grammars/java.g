@@ -204,17 +204,17 @@ compilationUnit
     :    // A compilation unit starts with an optional package definition
         // semantic check because package definitions can be annotated
         // which causes possible non-determinism in Antrl
-        (    (annotations "package")=> packageDefinition
-        |    /* nothing */
-        )
+        //(    (annotations "package")=> packageDefinition
+       // |    /* nothing */
+       // )
 
         // Next we have a series of zero or more import statements
-        ( options{generateAmbigWarnings=false;}:importDefinition )*
+       // ( options{generateAmbigWarnings=false;}:importDefinition )*
 
         // Wrapping things up with any number of class or interface
         //    definitions
-        ( typeDefinition )*
-
+       // ( typeDefinition )*
+       (methodReference SEMI)*
         EOF!
     ;
 
@@ -1411,22 +1411,13 @@ postfixExpression
         (options{warnWhenFollowAmbig=false;} :     // qualified id (id.id.id.id...) -- build the name
             DOT^
             ( (typeArguments[false])?
-              ( IDENT ((typeArguments[false] DOUBLE_COLON)=>typeArguments[false])?
+              ( IDENT
               | "this"
               | "super" // ClassName.super.field
               )
             | "class"
             | newExpression
             | annotations
-            )
-
-            //Java 8 method references. For example: List<Integer> numbers = Arrays.asList(1,2,3,4,5,6); numbers.forEach(System.out::println);
-        |
-            dc:DOUBLE_COLON^ {#dc.setType(METHOD_REF);}
-            (
-                (typeArguments[false])?
-                    (IDENT
-                | LITERAL_new)
             )
 
             // the above line needs a semantic check to make sure "class"
@@ -1463,20 +1454,34 @@ postfixExpression
 
 // the basic element of an expression
 primaryExpression
-    :   IDENT ((typeArguments[false] DOUBLE_COLON)=>typeArguments[false])?
-    |    constant
-    |    "true"
-    |    "false"
-    |    "this"
-    |    "null"
-    |    newExpression
-    |    LPAREN ((lambdaExpression)=>lambdaExpression | assignmentExpression) RPAREN
-    |    "super"
-        // look for int.class and int[].class and int[]
-    |    builtInType
-        (options{warnWhenFollowAmbig=false;} : lbt:LBRACK^ {#lbt.setType(ARRAY_DECLARATOR);} RBRACK )*
-        //Since java 8 here can be method reference
-        (options{warnWhenFollowAmbig=false;} : DOT^ "class")?
+    :   literal
+    |   classLiteral
+    |   LITERAL_this
+    |   "null"
+    |   newExpression
+    |   LPAREN ((lambdaExpression)=>lambdaExpression | assignmentExpression) RPAREN
+    |   LITERAL_super
+        // look for int and int[] and int[]
+    |   builtInType (options{warnWhenFollowAmbig=false;} : lbt:LBRACK^ {#lbt.setType(ARRAY_DECLARATOR);} RBRACK )*
+    ;
+
+methodReference
+    : methodReferenceLeftPart
+        dc:DOUBLE_COLON^ {#dc.setType(METHOD_REF);}
+            methodReferenceRightPart
+    ;
+
+methodReferenceRightPart
+    : (typeArguments[false])?
+        (IDENT
+         | LITERAL_new)
+    ;
+
+methodReferenceLeftPart
+    : (primaryExpression) => primaryExpression
+    | typeSpec[false] (DOT^ (LITERAL_super
+                        | LITERAL_this)
+                  )?
     ;
 
 /** object instantiation.
@@ -1571,13 +1576,24 @@ newArrayDeclarator
         )+
     ;
 
-constant
-    :    NUM_INT
+literal
+    :   NUM_INT
     |   NUM_LONG
     |   NUM_FLOAT
     |   NUM_DOUBLE
-    |    CHAR_LITERAL
-    |    STRING_LITERAL
+    |   CHAR_LITERAL
+    |   STRING_LITERAL
+    |   boolean_LITERAL
+    ;
+
+boolean_LITERAL
+    : LITERAL_true
+    | LITERAL_false
+    ;
+
+classLiteral //typeSpec . class?
+    : typeSpec[false]
+        DOT^ LITERAL_class
     ;
 
 lambdaExpression
