@@ -7,7 +7,7 @@ cache:
 
 branches:
   only:
-    - master
+    - primary
 
 install:
   -
@@ -296,16 +296,3 @@ matrix:
 
 script: eval $CMD
 
-after_success:
-  - eval $COVERAGE_CMD
-  - >-
-    if [[ $TRAVIS_REPO_SLUG == 'checkstyle/checkstyle'
-            && $TRAVIS_BRANCH == 'master'
-            && $TRAVIS_PULL_REQUEST == 'false'
-            && $DEPLOY == 'true'
-       ]];
-    then
-        mvn -s config/deploy-settings.xml deploy \
-          -DskipTests -DskipITs -Dpmd.skip=true -Dfindbugs.skip=true \
-          -Dcobertura.skip=true -Dcheckstyle.ant.skip=true -Dcheckstyle.skip=true -Dxml.skip=true ;
-    fi

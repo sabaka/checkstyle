@@ -1464,9 +1464,7 @@ postfixExpression
 // the basic element of an expression
 primaryExpression
     :   IDENT ((typeArguments[false] DOUBLE_COLON)=>typeArguments[false])?
-    |    constant
-    |    "true"
-    |    "false"
+    |    literal
     |    "this"
     |    "null"
     |    newExpression
@@ -1474,9 +1472,6 @@ primaryExpression
     |    "super"
         // look for int.class and int[].class and int[]
     |    builtInType
-        (options{warnWhenFollowAmbig=false;} : lbt:LBRACK^ {#lbt.setType(ARRAY_DECLARATOR);} RBRACK )*
-        //Since java 8 here can be method reference
-        (options{warnWhenFollowAmbig=false;} : DOT^ "class")?
     ;
 
 /** object instantiation.
@@ -1571,14 +1566,25 @@ newArrayDeclarator
         )+
     ;
 
-constant
-    :    NUM_INT
+literal
+    :   NUM_INT
     |   NUM_LONG
     |   NUM_FLOAT
     |   NUM_DOUBLE
-    |    CHAR_LITERAL
-    |    STRING_LITERAL
+    |   CHAR_LITERAL
+    |   STRING_LITERAL
+    |   boolean_LITERAL
     ;
+
+boolean_LITERAL
+    : LITERAL_true
+    | LITERAL_false
+    ;
+
+classLiteral
+    : typeSpec[false]
+        DOT^ LITERAL_class
+     ;
 
 lambdaExpression
     :    lambdaParameters LAMBDA^ lambdaBody
