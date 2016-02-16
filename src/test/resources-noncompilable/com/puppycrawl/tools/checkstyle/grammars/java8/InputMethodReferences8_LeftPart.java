@@ -1,0 +1,10 @@
+//literals
+"a"::b; 
+1::b;
+1L::b;
+'c'::b;
+true::b;
+false::b;
+void::b;
+0.1f::b;
+0.1::b;
